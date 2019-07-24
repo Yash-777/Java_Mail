@@ -34,7 +34,7 @@ import org.bouncycastle.mail.smime.SMIMESignedGenerator;
 public class MailOperations {
 	private final static Log log = LogFactory.getLog(MailOperations.class);
 	
-	private static String TO_ADDRESS = "venu-gopal-re.nomula@uniper.energy";
+	private static String TO_ADDRESS = "**********";
 	
 	public static void main(String[] args) throws IOException {
 		tetMail(false, true);
