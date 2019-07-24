@@ -3,6 +3,7 @@ package com.mail.java;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -17,7 +18,9 @@ import org.bouncycastle.asn1.smime.SMIMECapability;
 import org.bouncycastle.asn1.smime.SMIMECapabilityVector;
 import org.bouncycastle.asn1.smime.SMIMEEncryptionKeyPreferenceAttribute;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
@@ -59,13 +62,14 @@ public class BC_Cryptography extends X509Certificates {
 		
 		return cmsGenerator;
 	}
-	public static String getSignedMessage(X509Certificate signCert, PrivateKey privateKey_PEM, String secretMessage) throws CMSException, IOException, CertificateEncodingException, OperatorCreationException {
+	public static String getEncodedASNMessage(X509Certificate signCert, PrivateKey privateKey_PEM, String secretMessage) throws CMSException, IOException, CertificateEncodingException, OperatorCreationException {
 		CMSSignedDataGenerator cmsGenerator = buildSignedDataGenerator(signCert, privateKey_PEM);
 		
 		byte[] signedMessage = null;
 		CMSTypedData cmsData= new CMSProcessableByteArray(secretMessage.getBytes());
 		CMSSignedData cms = cmsGenerator.generate(cmsData, false);
 		signedMessage = cms.getEncoded();
+		
 		return new String(signedMessage);
 	}
 	protected static SMIMESignedGenerator buildSignedGenerator(X509Certificate signCert, PrivateKey privateKey_PEM, KeyStore keyStore, boolean usingCertificate) {
@@ -87,6 +91,7 @@ public class BC_Cryptography extends X509Certificates {
 			
 			if (usingCertificate) { // X509Certificate
 				IssuerAndSerialNumber createIssuerAndSerialNumberFor = SMIMEUtil.createIssuerAndSerialNumberFor(signCert);
+				// new IssuerAndSerialNumber(new X509Name(signCert.getIssuerDN().getName()), signCert.getSerialNumber())
 				signedAttrs.add(new SMIMEEncryptionKeyPreferenceAttribute(createIssuerAndSerialNumberFor));
 			} else { // KeyStore, KeyStore Alias
 				// Load certificate chain
@@ -109,24 +114,9 @@ public class BC_Cryptography extends X509Certificates {
 						.build(EMail.SIGNATURE_AlgorithmIdentifier.getValue(), privateKey_PEM, signCert));
 			gen.addCertificates(jcaCertStore);
 			
-			/*CMSSignedDataGenerator cmsGenerator = new CMSSignedDataGenerator();
-			cmsGenerator.addSignerInfoGenerator(
-					new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder()
-						.setProvider(MailDomain.EMAIL_PROVIDER.getValue()).build()).build(contentSigner, x509Certificate));
-			cmsGenerator.addCertificates(certs);
-			
-			Log4J.consoleLog("Original Message : " + secretMessage);
-			byte[] data = secretMessage.getBytes();
-			
-			CMSTypedData cmsData= new CMSProcessableByteArray(data);
-			CMSSignedData cms = cmsGenerator.generate(cmsData, true);
-			byte[] signedMessage = cms.getEncoded();*/
-			
 			return gen;
 		} catch (Exception e1) {
 		}
 		return null;
 	}
-	
-
 }
