@@ -10,9 +10,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.KeyStore;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -39,19 +41,26 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pdfbox.io.IOUtils;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.smime.SMIMECapabilitiesAttribute;
 import org.bouncycastle.asn1.smime.SMIMECapability;
 import org.bouncycastle.asn1.smime.SMIMECapabilityVector;
 import org.bouncycastle.asn1.smime.SMIMEEncryptionKeyPreferenceAttribute;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
+import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
+import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
+import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
+import org.bouncycastle.mail.smime.SMIMEEnvelopedGenerator;
+import org.bouncycastle.mail.smime.SMIMEException;
 import org.bouncycastle.mail.smime.SMIMESignedGenerator;
 import org.bouncycastle.mail.smime.SMIMEUtil;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.Strings;
 
-public class CertificateLogo {
+public class CertificateLogo { // Code for JKS and PKCS12 certificates : All the parts of Mail are Signed/Encrypted.
 	static MimeMessage message, signedMessage, finalMessage;
 	static MimeBodyPart messageText;
 	
@@ -122,15 +131,26 @@ public class CertificateLogo {
 		boolean attachementfile = true;
 		
 		if (attachementfile) {
-			boolean signAttachement = true;
-			if(signAttachement) {
+			//MimeMessage signedMessage = null;
+			boolean signMsg = true;
+			boolean encryptMsg = true;
+			if(signMsg) {
 				MimeMultipart mimeMultipart = signer.generate(message);
-				//signedMessage = getSingnedMessage(headers, mimeMultipart, mimeMultipart.getContentType());
-				mimeMultipart.writeTo(out);
+				signedMessage = getSingnedMessage(headers, mimeMultipart, mimeMultipart.getContentType());
+				if ( !encryptMsg) { // If no encryption, write to out
+					mimeMultipart.writeTo(out);
+				}
 			} else {
 				MimeBodyPart mimeBodyPart = signer.generateEncapsulated(message);
-				//signedMessage = getSingnedMessage(headers, mimeBodyPart, mimeBodyPart.getContentType());
-				mimeBodyPart.writeTo(out);
+				signedMessage = getSingnedMessage(headers, mimeBodyPart, mimeBodyPart.getContentType());
+				if ( !encryptMsg) { // If no encryption, write to out
+					mimeBodyPart.writeTo(out);
+				}
+			}
+			
+			if (encryptMsg) {
+				MimeBodyPart encryptedPart = getEncryptedPart(signedMessage, EMail.PUBLIC_KEY_FILE.toString());
+				encryptedPart.writeTo(out);
 			}
 			
 				byteArrayInputStream = new ByteArrayInputStream(out.toByteArray());
@@ -156,6 +176,8 @@ public class CertificateLogo {
 			message.writeTo(out);
 		}
 	}
+	
+	
 	public static MimeBodyPart attachementBody(ClassFile attachment) throws Exception {
 		// Per Attachment
 		MimeBodyPart attachmentMimeBody = new MimeBodyPart();
@@ -180,28 +202,17 @@ public class CertificateLogo {
 		IOUtils.copy(in, out); // org.apache.pdfbox.io.IOUtils
 		return tempFile;
 	}
-	private static MimeMessage getSingnedMessage(Enumeration headers, Object mimeObjectPart, String contentType) throws MessagingException {
-		MimeMessage signedMessage = new MimeMessage(session);
-
-		/** Set all original MIME headers in the signed message */
-		while (headers.hasMoreElements()) {
-			signedMessage.addHeaderLine((String) headers.nextElement());
-		}
-
-		signedMessage.setContent(mimeObjectPart, contentType);
-		signedMessage.saveChanges();
-		return signedMessage;
-	}
-	
 	public static InputStream getCerFileStream(boolean isClassPath, String fileName) throws FileNotFoundException {
 		InputStream stream = null;
-		consoleLog("File : "+ fileName);
+		File file = new File(fileName);
 		if (isClassPath) {
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 			stream = classLoader.getResourceAsStream(fileName);
 		} else {
-			stream = new FileInputStream(fileName);
+			stream = new FileInputStream(file.getAbsolutePath());
 		}
+		consoleLog("File : "+ file.getAbsolutePath() +", Is ClassPath:"+ isClassPath);
+		consoleLog("Stream: "+stream);
 		return stream;
 	}
 	
@@ -263,6 +274,35 @@ public class CertificateLogo {
 		Store certs = new JcaCertStore(certList);
 		signer.addCertificates(certs);
 	}
+	
+	private static MimeMessage getSingnedMessage(Enumeration headers, Object mimeObjectPart, String contentType) throws MessagingException {
+		MimeMessage signedMessage = new MimeMessage(session);
+
+		/** Set all original MIME headers in the signed message */
+		while (headers.hasMoreElements()) {
+			signedMessage.addHeaderLine((String) headers.nextElement());
+		}
+
+		signedMessage.setContent(mimeObjectPart, contentType);
+		signedMessage.saveChanges();
+		return signedMessage;
+	}
+	private static MimeBodyPart getEncryptedPart(MimeMessage message, String publicCerFile) 
+			throws SMIMEException, CMSException, IllegalArgumentException, CertificateException, NoSuchProviderException, IOException {
+		
+		ASN1ObjectIdentifier encryptionOID = CMSAlgorithm.RC2_CBC;
+		
+		InputStream inputStream = getCerFileStream(false, publicCerFile);
+		CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509", "BC");
+		X509Certificate publicCer = (X509Certificate) certificateFactory.generateCertificate(inputStream);
+		inputStream.close();
+		
+		SMIMEEnvelopedGenerator encrypter = new SMIMEEnvelopedGenerator();
+		encrypter.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(publicCer).setProvider("BC"));
+		return encrypter.generate(message,
+					new JceCMSContentEncryptorBuilder(encryptionOID, 40).setProvider("BC").build());
+	}
+	
 }
 class ByteArrayDataSource implements DataSource {
 	private byte[] data; // data
@@ -320,22 +360,28 @@ class ClassFile {
 	String fileName, contentType;
 	InputStream stream;
 	
-	public String getFileName() {
+	public String getFileName()
+	{
 		return fileName;
 	}
-	public String getContentType() {
+	public String getContentType()
+	{
 		return contentType;
 	}
-	public InputStream getStream() {
+	public InputStream getStream()
+	{
 		return stream;
 	}
-	public void setFileName(String fileName) {
+	public void setFileName(String fileName)
+	{
 		this.fileName = fileName;
 	}
-	public void setContentType(String contentType) {
+	public void setContentType(String contentType)
+	{
 		this.contentType = contentType;
 	}
-	public void setStream(InputStream stream) {
+	public void setStream(InputStream stream)
+	{
 		this.stream = stream;
 	}
 }
