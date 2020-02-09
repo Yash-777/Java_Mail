@@ -32,6 +32,7 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Session;
+import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
@@ -39,7 +40,6 @@ import javax.mail.internet.MimeMultipart;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.pdfbox.io.IOUtils;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.AttributeTable;
@@ -73,10 +73,10 @@ public class CertificateLogo { // Code for JKS and PKCS12 certificates : All the
 	static String FROM_ADDRESS, TO_ADDRESS;
 	static Session session;
 	public static void main(String[] args) throws Exception {
-		String subject = "Message Sent on Date:";
-		String body = "Hi, ...";
+		String subject = "Message Sent on Date:" + (new Date());
+		String body = "Hi, Test Mail";
 		
-		session = ElectronicMail.getSessionObject(false, EMail.PROTOCAL.getValue());
+		session = ElectronicMail.getSessionObject(true, EMail.PROTOCAL.getValue());
 		message = new MimeMessage( session );
 		message.setSentDate(new Date());
 		
@@ -102,7 +102,8 @@ public class CertificateLogo { // Code for JKS and PKCS12 certificates : All the
 
 		ClassFile obj = new ClassFile();
 		String fileName = EMail.CERTIFICATE_FILE.getValue();
-		String password = EMail.PASSWORD.getValue();
+		String password = EMail.ALIAS_PASSWORD.getValue();
+		// java.io.IOException: PKCS12 key store mac invalid - wrong password or corrupted file.
 		InputStream stream = getCerFileStream(false, fileName);
 		certificateGen(stream, password);
 		obj.setContentType("application/octet-stream");
@@ -149,29 +150,45 @@ public class CertificateLogo { // Code for JKS and PKCS12 certificates : All the
 			}
 			
 			if (encryptMsg) {
-				MimeBodyPart encryptedPart = getEncryptedPart(signedMessage, EMail.PUBLIC_KEY_FILE.toString());
+				
+				String publicCer = EMail.PUBLIC_KEY_FILE.toString();
+				File file = new File("Publickey.cer");
+				System.out.println("publicCer: "+file.getAbsolutePath());
+				MimeBodyPart encryptedPart = getEncryptedPart(signedMessage, file.getAbsolutePath());
 				encryptedPart.writeTo(out);
 			}
 			
 				byteArrayInputStream = new ByteArrayInputStream(out.toByteArray());
 				finalMessage = new MimeMessage(session, byteArrayInputStream);
 				
-				while (headers.hasMoreElements()) {
-					String headerLine = (String) headers.nextElement();
+				Enumeration headers2 = message.getAllHeaderLines();
+				while (headers2.hasMoreElements()) {
+					String headerLine = (String) headers2.nextElement();
 					// Make sure not to override any content-* headers from the original message
 					log.info("Headers::" + headerLine);
 					if (!Strings.toLowerCase(headerLine).startsWith("content-")) {
 						finalMessage.addHeaderLine(headerLine);
 					}
 				}
+			//finalMessage.setContent(finalMessage, finalMessage.getContentType());
+			finalMessage.setContent(multipartContent);
 			finalMessage.saveChanges();
-			
-			finalMessage.writeTo(System.out);
-			finalMessage.writeTo(new FileOutputStream(EMail.SAVE_MESSAGE.getValue()));
 			
 			out.close();
 			byteArrayInputStream.close();
 			
+			// Send message
+			Transport transport = session.getTransport(EMail.PROTOCAL.getValue());
+			if (true) {
+				transport.connect(EMail.SMTP_HOST.getValue(), EMail.USER_NAME.getValue(), EMail.PASSWORD.getValue());
+			} else {
+				transport.connect(); // javax.mail.AuthenticationFailedException
+			}
+			transport.sendMessage(finalMessage, finalMessage.getAllRecipients());
+			transport.close();
+			
+			finalMessage.writeTo(System.out);
+			finalMessage.writeTo(new FileOutputStream(EMail.SAVE_MESSAGE.getValue()));
 		} else {
 			message.writeTo(out);
 		}
@@ -195,13 +212,7 @@ public class CertificateLogo { // Code for JKS and PKCS12 certificates : All the
 		is.close();
 		return attachmentMimeBody;
 	}
-	public static File getFileFromStream(InputStream in) throws IOException {
-		File tempFile = File.createTempFile("MyServer", ".jks");
-		tempFile.deleteOnExit();
-		FileOutputStream out = new FileOutputStream(tempFile);
-		IOUtils.copy(in, out); // org.apache.pdfbox.io.IOUtils
-		return tempFile;
-	}
+
 	public static InputStream getCerFileStream(boolean isClassPath, String fileName) throws FileNotFoundException {
 		InputStream stream = null;
 		File file = new File(fileName);
@@ -298,7 +309,9 @@ public class CertificateLogo { // Code for JKS and PKCS12 certificates : All the
 		inputStream.close();
 		
 		SMIMEEnvelopedGenerator encrypter = new SMIMEEnvelopedGenerator();
-		encrypter.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(publicCer).setProvider("BC"));
+		// org.bouncycastle.cert.jcajce.JcaX509CertificateHolder.<init>(Unknown Source)
+		// https://github.com/bcgit/bc-java/issues/310
+		//encrypter.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(publicCer).setProvider("BC"));
 		return encrypter.generate(message,
 					new JceCMSContentEncryptorBuilder(encryptionOID, 40).setProvider("BC").build());
 	}
@@ -336,22 +349,18 @@ class ByteArrayDataSource implements DataSource {
 		}
 	}
 
-	@Override
 	public String getContentType() {
 		return contentType;
 	}
 
-	@Override
 	public InputStream getInputStream() throws IOException {
 		return new ByteArrayInputStream(data);
 	}
 
-	@Override
 	public String getName() {
 		return name;
 	}
 
-	@Override
 	public OutputStream getOutputStream() throws IOException {
 		return null;
 	}
@@ -385,3 +394,32 @@ class ClassFile {
 		this.stream = stream;
 	}
 }
+/*
+keytool -genkey -alias MyServer -keyalg RSA -validity 1825 -keystore "F:/MyServer.p12" -storetype pkcs12 -keypass password -storepass password -dname "CN=myserver.com,OU=My Company Name,O=My Organization,L=My Location,ST=My State,C=My Country Short Code"
+
+> java.lang.SecurityException: class "org.bouncycastle.jcajce.provider.symmetric.IDEA$Mappings"'s signer information does not match signer information of other classes in the same package
+using selenium-server-standalone? I had this problem until I got rid of this one.
+https://github.com/lightbody/browsermob-proxy/issues/470
+
+
+> java.io.IOException: PKCS12 key store mac invalid - wrong password or corrupted file. : Wrong Password
+
+> com.sun.mail.smtp.SMTPSendFailedException: 530 5.7.0 Must issue a STARTTLS command first. q17sm9239202pfg.123 - gsmtp
+
+530 5.7.0 Must issue a STARTTLS command first. g21sm9892457pfb.126 - gsmtp
+
+if(transportProtocal.equalsIgnoreCase("SMTPS") || EMail.SMTP_PORT.getValue().equalsIgnoreCase("587")) {
+	props.put("mail.transport.protocol", "smtps");
+	props.put("mail.smtp.starttls.enable", "true");
+}
+
+> com.sun.mail.smtp.SMTPSendFailedException: 530-5.7.0 Authentication Required. Learn more at 530 5.7.0  https://support.google.com/mail/?p=WantAuthError u12sm6609805pgr.3 - gsmtp
+
+IMAP: https://support.google.com/mail/answer/7126229?p=WantAuthError&visit_id=637168516138989254-1627005920&rd=2#cantsignin
+POP: https://support.google.com/mail/answer/7104828
+transport.connect(EMail.SMTP_HOST.getValue(), EMail.USER_NAME.getValue(), EMail.PASSWORD.getValue());
+
+Control access to less secure apps: https://support.google.com/a/answer/6260879?hl=en
+>> Less secure app access: https://myaccount.google.com/lesssecureapps
+After diabiling we are getting > javax.mail.AuthenticationFailedException
+*/
