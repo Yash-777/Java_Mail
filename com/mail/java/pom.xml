@@ -1,0 +1,383 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.github.pom</groupId>
+  <artifactId>ProjectName</artifactId>
+  <packaging>war</packaging>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>ProjectName Maven Webapp</name>  
+  <url>http://maven.apache.org</url>
+  <properties>
+        <common.conf.directory>conf/common</common.conf.directory>
+  </properties>
+
+
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <war.classifier>dev</war.classifier>
+                <conf.directory>conf/dev</conf.directory>
+                <environment>DEV</environment>
+                <mailerror.to>mymail.domail.com</mailerror.to>
+                <env.mail.subject>My Subject</env.mail.subject>
+            </properties>
+        </profile>
+
+    </profiles>
+
+  
+  <dependencies>
+  
+  <!-- https://mvnrepository.com/artifact/org.apache.xmlgraphics/fop -->
+<!-- <dependency>
+    <groupId>org.apache.xmlgraphics</groupId>
+    <artifactId>fop</artifactId>
+    <version>2.3</version>
+</dependency>
+  
+   -->
+    <dependency>
+        <groupId>wsdl4j</groupId>
+        <artifactId>wsdl4j</artifactId>
+        <version>1.6.2</version>
+    </dependency>
+    <dependency>
+        <groupId>xalan</groupId>
+        <artifactId>xalan</artifactId>
+        <version>2.7.1</version>
+    </dependency>
+    <dependency>
+        <groupId>xerces</groupId>
+        <artifactId>xercesImpl</artifactId>
+        <version>2.11.0</version>
+    </dependency>
+    <dependency>
+        <groupId>net.sf.saxon</groupId>
+        <artifactId>Saxon-HE</artifactId>
+        <version>9.7.0-15</version>
+    </dependency>
+            
+  <dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>javax.servlet-api</artifactId>
+    <version>3.0.1</version>
+    <scope>provided</scope>
+</dependency>
+
+<dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-dbcp</artifactId>
+            <version>9.0.10</version>
+            <scope>provided</scope>
+        </dependency>
+        
+  <!-- PDF -->
+<dependency>
+    <groupId>org.apache.pdfbox</groupId> 
+    <artifactId>pdfbox</artifactId>
+    <version>2.0.8</version>
+</dependency>
+
+<!-- Java Mail --> 
+<dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bcpkix-jdk15on</artifactId>
+    <version>1.58</version>
+</dependency>
+<dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bcmail-jdk15on</artifactId>
+    <version>1.58</version>
+</dependency>
+<dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bcprov-ext-jdk15on</artifactId>
+    <version>1.58</version>
+</dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.6</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+    <dependency>
+        <groupId>org.glassfish.jersey.containers</groupId>
+        <artifactId>jersey-container-servlet</artifactId>
+        <version>2.26</version>
+    </dependency>
+    <dependency>
+        <groupId>org.glassfish.jersey.core</groupId>
+        <artifactId>jersey-server</artifactId>
+        <version>2.26</version>
+    </dependency>
+    <dependency>
+        <groupId>org.glassfish.jersey.inject</groupId>
+        <artifactId>jersey-hk2</artifactId>
+        <version>2.26</version>
+    </dependency>
+    <dependency>
+        <groupId>org.glassfish.jersey.media</groupId>
+        <artifactId>jersey-media-moxy</artifactId>
+        <version>2.26</version>
+    </dependency>
+    <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>20180130</version>
+    </dependency>
+<dependency>
+    <groupId>javax.activation</groupId>
+    <artifactId>activation</artifactId>
+    <version>1.1.1</version>
+</dependency>
+<dependency>
+    <groupId>javax.mail</groupId>
+    <artifactId>mail</artifactId>
+    <version>1.4</version>
+</dependency>
+
+<!-- <dependency>
+    <groupId>com.sun.mail</groupId>
+    <artifactId>javax.mail</artifactId>
+    <version>1.5.6</version>
+    <scope>provided</scope>
+</dependency> -->
+
+<!-- https://mvnrepository.com/artifact/com.oracle/ojdbc14 -->
+<!-- <dependency>
+    <groupId>com.oracle</groupId>
+    <artifactId>ojdbc14</artifactId>
+    <version>10.2.0.4.0</version>
+</dependency> -->
+<!-- https://mvnrepository.com/artifact/com.oracle/ojdbc6 -->
+<!-- <dependency>
+    <groupId>com.oracle</groupId>
+    <artifactId>ojdbc6</artifactId>
+    <version>11.2.0.1.0</version>
+    <scope>test</scope>
+</dependency> -->
+
+<!-- <dependency>
+    <groupId>com.oracle</groupId>
+    <artifactId>ojdbc6</artifactId>
+    <scope>provided</scope>
+</dependency> -->
+<!-- 
+
+<dependency>
+    <groupId>org.apache.tomcat</groupId>
+    <artifactId>tomcat-dbcp</artifactId>
+    <version>9.0.10</version>
+    <scope>provided</scope>
+</dependency> -->
+<!-- https://mvnrepository.com/artifact/com.oracle/aqapi
+com.oracle.aqapi 11.2.0.1.0 maven
+ -->
+<!-- <dependency>
+    <groupId>com.oracle</groupId>
+    <artifactId>aqapi</artifactId>
+    <version>11.2.0.1.0</version>
+</dependency> -->
+
+<!-- Java Message Service: https://mvnrepository.com/artifact/javax.jms/jms
+https://community.oracle.com/thread/3994924
+https://github.com/ceharris/oracle-aq-demo/blob/master/pom.xml
+https://docs.oracle.com/cd/B10500_01/appdev.920/a96587/apexampl.htm#59717
+https://stackoverflow.com/questions/5576415/jms-topic-vs-queues -->
+<dependency>
+    <groupId>javax.jms</groupId>
+    <artifactId>jms</artifactId>
+    <version>1.1</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/javax.transaction/javax.transaction-api
+https://stackoverflow.com/a/49112022/5081877 -->
+<dependency>
+    <groupId>javax.transaction</groupId>
+    <artifactId>javax.transaction-api</artifactId>
+    <version>1.2</version>
+</dependency>
+
+<!-- Quartz API -->
+<dependency>
+    <groupId>org.quartz-scheduler</groupId>
+    <artifactId>quartz</artifactId>
+    <version>2.1.5</version>
+</dependency> 
+  </dependencies>
+
+
+  <repositories>
+      <!-- Repository for ORACLE JDBC Driver -->
+    <repository>
+        <id>codelds</id>
+        <url>https://code.lds.org/nexus/content/groups/main-repo</url>
+    </repository>
+    
+    <repository>
+      <id>central</id>
+      <name>Central Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+ 
+  <pluginRepositories>
+    <pluginRepository>
+      <id>central</id>
+      <name>Central Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
+  
+
+
+  <build>
+          <resources>
+            <resource>
+                <directory>${conf.directory}</directory>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+            </resource>
+            <!-- <resource>
+                <directory>${basedir}/</directory>
+            </resource> -->
+        </resources>
+
+<!-- mvn dependency:copy-dependencies -->
+<!-- <plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-dependency-plugin</artifactId>
+  <version>3.0.0</version>
+  <executions>
+    <execution>
+      <id>copy-dependencies</id>
+      <phase>package</phase>
+      <goals>
+        <goal>copy-dependencies</goal>
+      </goals>
+      <configuration>
+        <outputDirectory>${project.build.directory}/lib</outputDirectory>
+        <overWriteReleases>false</overWriteReleases>
+        <overWriteSnapshots>false</overWriteSnapshots>
+        <overWriteIfNewer>true</overWriteIfNewer>
+      </configuration>
+    </execution>
+  </executions>
+</plugin> -->
+
+<!-- <plugin>
+    <artifactId>maven-resources-plugin</artifactId>
+    <executions>
+        <execution>
+            <id>copy-resources</id>
+            here the phase you need
+            <phase>validate</phase>
+            <goals>
+                <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+                <outputDirectory>${conf.directory}</outputDirectory>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>log4j.properties</include>
+                        </includes>
+                        <filtering>true</filtering>
+                    </resource>
+                </resources>
+            </configuration>
+        </execution>
+    </executions>
+</plugin> -->
+        
+        <finalName>NeonDashboard</finalName>
+        <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <source>1.8</source>
+                <target>1.8</target>
+                <encoding>UTF-8</encoding>
+            </configuration>
+        </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-war-plugin</artifactId>
+            <configuration>
+                <archiveClasses>true</archiveClasses>
+                <classifier>${war.classifier}</classifier>
+                <webResources>
+                    <resource>
+                        <directory>${common.conf.directory}</directory>
+                        <targetPath>WEB-INF/classes</targetPath>
+
+                    </resource>
+                    <resource>
+                        <directory>${conf.directory}</directory>
+                        <targetPath>WEB-INF/classes</targetPath>
+                        <includes>
+                            <include>*.properties</include>
+                            <include>**/**/*.xsl</include>
+                            <include>**/**/*.properties</include>
+                            <include>*.xconf</include>
+
+                        </includes>
+                    </resource>
+                    <resource>
+                        <directory>${conf.directory}</directory>
+                        <targetPath>META-INF</targetPath>
+                        <includes>
+                            <include>context.xml</include>
+                        </includes>
+                    </resource>
+                    <!-- ${project.build.directory} - https://stackoverflow.com/a/2415670/5081877
+                    https://maven.apache.org/plugins/maven-war-plugin/examples/adding-filtering-webresources.html
+                     -->
+                    <resource>
+                        <directory>${basedir}</directory>
+                        <targetPath>WEB-INF/classes</targetPath>
+                        <includes>
+                            <include>*.jks</include>
+                            <include>*.p12</include>
+                            <include>*.pfx</include>
+                        </includes>
+                    </resource>
+                </webResources>
+            </configuration>
+        </plugin>
+    </plugins>
+  </build>
+</project>
