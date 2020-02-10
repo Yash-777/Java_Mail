@@ -151,8 +151,8 @@ public class CertificateLogo { // Code for JKS and PKCS12 certificates : All the
 			
 			if (encryptMsg) {
 				
-				String publicCer = EMail.PUBLIC_KEY_FILE.toString();
-				File file = new File("Publickey.cer");
+				String publicCer = EMail.PUBLIC_KEY_FILE.getValue();
+				File file = new File(publicCer);
 				System.out.println("publicCer: "+file.getAbsolutePath());
 				MimeBodyPart encryptedPart = getEncryptedPart(signedMessage, file.getAbsolutePath());
 				encryptedPart.writeTo(out);
